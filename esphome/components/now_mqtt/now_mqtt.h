@@ -24,7 +24,7 @@ namespace esphome
             void add_on_state_callback(std::function<void(float)> &&callback) { this->callback_.add(std::move(callback)); }
 
         protected:
-            uint8_t wifi_channel_ = 1;
+            uint8_t wifi_channel_ = 5;
 
         private:
             CallbackManager<void(float)> callback_;
