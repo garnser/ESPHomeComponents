@@ -24,6 +24,7 @@ namespace esphome
             ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
             ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
             ESP_ERROR_CHECK(esp_wifi_start());
+            ESP_LOGI(TAG, "Configuring ESP-Now channel: %d", this->wifi_channel_);
             ESP_ERROR_CHECK(esp_wifi_set_channel(this->wifi_channel_, WIFI_SECOND_CHAN_NONE));
 
             if (esp_now_init() != ESP_OK)
