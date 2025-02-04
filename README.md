@@ -3,6 +3,9 @@ ESPHome Components
 
 **This repo has been adjusted to support esp-idf**
 
+======
+
+
 This repo contains components for Microfire sensors that can be used in ESPHome and Home Assistant. 
 
 ### Use
