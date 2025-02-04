@@ -82,10 +82,10 @@ namespace esphome
                 serializeJson(doc, json);
 
                 // make and send the config topic
-                discovery_info = mqtt::global_mqtt_client->get_discovery_info();
+                auto discovery_info = mqtt::global_mqtt_client->get_discovery_info();
                 memset(&topic, 0, sizeof(topic));
-                snprintf(topic, sizeof(topic), binary_config_topic, discovery_info.prefix.c_str(), tokens[0], tokens[3]);
-                mqtt::global_mqtt_client->publish(topic, json.c_str(), json.length(), 2, true);
+                snprintf(topic, sizeof(topic), binary_config_topic, discovery_info->prefix.c_str(), tokens[0], tokens[3]);
+                mqtt::global_mqtt_client->publish(topic, json.c_str(), json.length(), mqtt::QOS_2, true);
 
                 // make and send the state topic
                 memset(&topic, 0, sizeof(topic));
@@ -208,7 +208,8 @@ namespace esphome
             esp_now_peer_info_t peerInfo = {};
 
             ESP_LOGD(TAG, "Setting up ESP-Now MQTT Bridge...");
-            ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+            ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+            vTaskDelay(pdMS_TO_TICKS(2000)); // Ensure WiFi is fully initialized before ESP-NOW starts
 
             if (esp_now_init() != ESP_OK)
             {
@@ -216,19 +217,26 @@ namespace esphome
                 ESP_LOGE(TAG, "Error initializing ESP-Now MQTT Bridge");
                 return;
             }
-            esp_now_register_recv_cb(Now_MQTT_BridgeComponent::call_on_data_recv_callback);
-            esp_wifi_set_promiscuous(true);
-            esp_wifi_set_promiscuous_rx_cb(Now_MQTT_BridgeComponent::call_prom_callback);
+            esp_now_register_recv_cb(&Now_MQTT_BridgeComponent::call_on_data_recv_callback);
+            esp_wifi_set_promiscuous(1);
+            esp_wifi_set_promiscuous_rx_cb([](void *buf, wifi_promiscuous_pkt_type_t type) {
+              Now_MQTT_BridgeComponent().promcallback(buf, type);
+            });
         }
 
-        void Now_MQTT_BridgeComponent::call_on_data_recv_callback(const uint8_t *mac_addr, const uint8_t *incomingData, int len)
+        void Now_MQTT_BridgeComponent::call_on_data_recv_callback(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len)
         {
-            Now_MQTT_BridgeComponent().receivecallback(mac_addr, incomingData, len);
+          auto *instance = static_cast<Now_MQTT_BridgeComponent *>(esphome::global_component_registry->find_by_type<Now_MQTT_BridgeComponent>());
+          if (instance != nullptr) {
+            instance->receivecallback(info->src_addr, incomingData, len);
+          }
         }
 
         void Now_MQTT_BridgeComponent::call_prom_callback(void *buf, wifi_promiscuous_pkt_type_t type)
         {
-            Now_MQTT_BridgeComponent().promcallback(buf, type);
+            if (instance != nullptr) {
+              instance->promcallback(buf, type);
+            }
         }
 
         void Now_MQTT_BridgeComponent::promcallback(void *buf, wifi_promiscuous_pkt_type_t type)

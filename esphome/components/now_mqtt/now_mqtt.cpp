@@ -17,16 +17,17 @@ namespace esphome
             esp_now_peer_info_t peerInfo = {};
 
             ESP_LOGD(TAG, "Setting up ESP-Now-MQTT...");
+            wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
             ESP_ERROR_CHECK(esp_netif_init());
             ESP_ERROR_CHECK(esp_event_loop_create_default());
-            wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
             ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-            ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
             ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
             ESP_ERROR_CHECK(esp_wifi_start());
+
+            vTaskDelay(pdMS_TO_TICKS(2000)); // Ensure WiFi starts before ESP-NOW
             if (this->wifi_channel_ != 5) {
                 this->wifi_channel_ = 5;
-            }            
+            }
             ESP_LOGI(TAG, "Configuring ESP-Now channel: %d", this->wifi_channel_);
             ESP_ERROR_CHECK(esp_wifi_set_channel(this->wifi_channel_, WIFI_SECOND_CHAN_NONE));
 
@@ -36,16 +37,19 @@ namespace esphome
                 ESP_LOGE(TAG, "Error initializing ESP-NOW");
                 return;
             }
+            #ifdef WIFI_PROTOCOL_LR
             esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+            #endif
             memcpy(peerInfo.peer_addr, broadcastAddress, 6);
             peerInfo.channel = this->wifi_channel_;
             peerInfo.encrypt = false;
 
-            if (esp_now_add_peer(&peerInfo) != ESP_OK)
-            {
+            if(!esp_now_is_peer_exist(broadcastAddress)) {
+              if (esp_now_add_peer(&peerInfo) != ESP_OK) {
                 this->mark_failed();
                 ESP_LOGE(TAG, "Failed to add peer");
                 return;
+              }
             }
 
             for (auto *obj : App.get_sensors())
@@ -110,7 +114,7 @@ namespace esphome
             this->callback_.call(state);
         }
         #endif
-        
+
         #ifdef USE_TEXT_SENSOR
         void Now_MQTTComponent::on_text_sensor_update(text_sensor::TextSensor *obj, std::string state)
         {
