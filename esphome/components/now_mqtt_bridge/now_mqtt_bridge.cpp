@@ -237,7 +237,7 @@ namespace esphome
         void Now_MQTT_BridgeComponent::call_prom_callback(void *buf, wifi_promiscuous_pkt_type_t type)
         {
             if (instance_ != nullptr) {
-              instance->promcallback(buf, type);
+              instance_->promcallback(buf, type);
             }
         }
 
