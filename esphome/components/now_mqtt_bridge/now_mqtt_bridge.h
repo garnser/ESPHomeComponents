@@ -38,6 +38,7 @@ namespace esphome
             uint8_t wifi_channel_;
 
         private:
+            static Now_MQTT_BridgeComponent *instance_;
             static int32_t last_rssi;
             void receivecallback(const uint8_t *bssid, const uint8_t *data, int len);
             static void call_on_data_recv_callback(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len);

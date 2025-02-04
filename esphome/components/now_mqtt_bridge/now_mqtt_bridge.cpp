@@ -12,6 +12,7 @@ namespace esphome
         static const char *const TAG = "now_mqtt_bridge.sensor";
         int32_t Now_MQTT_BridgeComponent::last_rssi = 0;
 
+        Now_MQTT_BridgeComponent *Now_MQTT_BridgeComponent::instance_ = nullptr;
         void Now_MQTT_BridgeComponent::receivecallback(const uint8_t *bssid, const uint8_t *data, int len)
         {
             char received_string[251];
@@ -194,6 +195,7 @@ namespace esphome
         void Now_MQTT_BridgeComponent::setup()
         {
             // if there's no wifi section, init wifi here
+            instance_ = this;
             #ifndef USE_WIFI
             ESP_LOGD(TAG, "Setting up ESP-Now WiFi interface...");
             ESP_ERROR_CHECK(esp_netif_init());
@@ -226,7 +228,7 @@ namespace esphome
 
         void IRAM_ATTR Now_MQTT_BridgeComponent::call_on_data_recv_callback(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len)
         {
-          auto *instance = static_cast<Now_MQTT_BridgeComponent *>(esphome::global_component_registry->find_by_type<Now_MQTT_BridgeComponent>());
+          auto *instance = Now_MQTT_BridgeComponent::instance_;
           if (instance != nullptr) {
             instance->receivecallback(info->src_addr, incomingData, len);
           }
@@ -234,7 +236,7 @@ namespace esphome
 
         void Now_MQTT_BridgeComponent::call_prom_callback(void *buf, wifi_promiscuous_pkt_type_t type)
         {
-            if (instance != nullptr) {
+            if (instance_ != nullptr) {
               instance->promcallback(buf, type);
             }
         }
