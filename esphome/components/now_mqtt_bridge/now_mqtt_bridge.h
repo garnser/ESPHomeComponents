@@ -3,6 +3,7 @@
 #include "esphome/core/component.h"
 #include "esphome/components/mqtt/mqtt_client.h"
 #include "esp_wifi.h"
+#include <esp_now.h>
 
 namespace esphome
 {
@@ -39,7 +40,7 @@ namespace esphome
         private:
             static int32_t last_rssi;
             void receivecallback(const uint8_t *bssid, const uint8_t *data, int len);
-            static void call_on_data_recv_callback(const esp_now_recv_info_t *info, const uint8_t *data, int len);
+            static void call_on_data_recv_callback(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len);
             void promcallback(void *buf, wifi_promiscuous_pkt_type_t type);
             static void call_prom_callback(void *buf, wifi_promiscuous_pkt_type_t type);
             void split(char **argv, int *argc, char *string, const char delimiter, int allowempty);
